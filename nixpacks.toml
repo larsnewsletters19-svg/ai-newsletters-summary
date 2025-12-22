@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["python310", "python310Packages.pip"]
-
-[phases.install]
-cmds = ["pip install --no-cache-dir -r requirements.txt"]
-
-[start]
-cmd = "python app.py"
