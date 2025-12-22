@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <!-- Kör nu-kort -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-4">⚡ Kör sammanfattning</h2>
+        <button id="runBtn" onclick="runSummary()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full">
+            ▶️ Kör nu
+        </button>
+        <div id="runStatus" class="mt-4 hidden">
+            <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                <p class="text-blue-800">Körning pågår...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status-kort -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-4">📊 Status</h2>
+        <div class="space-y-2">
+            <p><strong>Senaste körning:</strong> 
+                <span id="lastRun">{{ status.last_run or 'Aldrig' }}</span>
+            </p>
+            <p><strong>Resultat:</strong> 
+                <span id="lastResult" class="{% if status.last_result == 'success' %}text-green-600{% else %}text-red-600{% endif %}">
+                    {{ status.last_result or 'N/A' }}
+                </span>
+            </p>
+            {% if status.error %}
+            <p class="text-red-600 text-sm">{{ status.error }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Historik -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-bold mb-4">📜 Senaste sammanfattningar</h2>
+    <div class="space-y-3">
+        {% for summary in summaries %}
+        <div class="border-b pb-3">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="font-semibold">Vecka {{ summary.week }}</h3>
+                    <p class="text-sm text-gray-600">
+                        {{ summary.created_at }} · {{ summary.newsletter_count }} newsletters
+                    </p>
+                </div>
+                <a href="/summary/{{ summary.week }}" 
+                   class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded">
+                    Visa
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function runSummary() {
+    const btn = document.getElementById('runBtn');
+    const status = document.getElementById('runStatus');
+    
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+    status.classList.remove('hidden');
+    
+    try {
+        const response = await fetch('/api/run', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            pollStatus();
+        } else {
+            alert('Fel: ' + data.error);
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            status.classList.add('hidden');
+        }
+    } catch (error) {
+        alert('Fel vid körning: ' + error);
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+        status.classList.add('hidden');
+    }
+}
+
+async function pollStatus() {
+    const interval = setInterval(async () => {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        
+        document.getElementById('lastRun').textContent = data.last_run || 'Aldrig';
+        document.getElementById('lastResult').textContent = data.last_result || 'N/A';
+        
+        if (!data.running) {
+            clearInterval(interval);
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('runBtn').classList.remove('opacity-50');
+            document.getElementById('runStatus').classList.add('hidden');
+            
+            if (data.last_result === 'success') {
+                alert('✅ Sammanfattning klar! Kolla din email.');
+                location.reload();
+            } else {
+                alert('❌ Körningen misslyckades. Se status för detaljer.');
+            }
+        }
+    }, 2000);
+}
+</script>
+{% endblock %}

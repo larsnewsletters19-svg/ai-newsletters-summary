@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">📄 Vecka {{ summary.week }}</h2>
+        <a href="/" class="text-blue-600 hover:underline">← Tillbaka</a>
+    </div>
+    
+    <div class="mb-4 text-sm text-gray-600">
+        Skapad: {{ summary.created_at }} · {{ summary.newsletter_count }} newsletters
+    </div>
+    
+    <div class="bg-gray-50 border rounded p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-semibold">Markdown-innehåll</h3>
+            <button onclick="copyToClipboard()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                📋 Kopiera till Teams
+            </button>
+        </div>
+        <pre id="markdownContent" class="whitespace-pre-wrap font-mono text-sm bg-white p-4 rounded border overflow-auto max-h-96">{{ summary.markdown_content }}</pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyToClipboard() {
+    const content = document.getElementById('markdownContent').textContent;
+    navigator.clipboard.writeText(content).then(() => {
+        alert('✅ Kopierat! Klistra in i Teams.');
+    }).catch(err => {
+        alert('❌ Kunde inte kopiera: ' + err);
+    });
+}
+</script>
+{% endblock %}
