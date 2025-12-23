@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["python310", "python310Packages.pip", "cairo", "pango", "gdk-pixbuf", "glib", "harfbuzz"]
+
+[phases.install]
+cmds = ["pip install --no-cache-dir --break-system-packages -r requirements.txt"]
+
+[start]
+cmd = "python app.py"
