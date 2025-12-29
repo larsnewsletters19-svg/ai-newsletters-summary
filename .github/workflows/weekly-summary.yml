@@ -1,0 +1,50 @@
+name: Weekly Newsletter Summary
+
+on:
+  schedule:
+    # Kör varje fredag kl 08:00 UTC (09:00 svensk tid)
+    - cron: '0 8 * * 5'
+  workflow_dispatch: # Tillåt manuell trigger för testning
+  
+  # Kör bara från main branch
+  push:
+    branches:
+      - main
+
+jobs:
+  run-summary:
+    runs-on: ubuntu-latest
+    
+    # Dubbelkolla att det är main branch
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Trigger Newsletter Summary
+        run: |
+          echo "🤖 Triggering weekly newsletter summary..."
+          
+          # Anropa Railway /api/run endpoint
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            https://ai-newsletters-summary-production.up.railway.app/api/run)
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          echo "📡 Response code: $http_code"
+          echo "📊 Response body: $body"
+          
+          if [ "$http_code" = "200" ]; then
+            echo "✅ Newsletter summary triggered successfully!"
+          else
+            echo "❌ Failed to trigger summary"
+            exit 1
+          fi
+      
+      - name: Wait and check status
+        run: |
+          echo "⏳ Waiting 5 minutes for processing..."
+          sleep 300
+          
+          # Kolla status
+          status=$(curl -s https://ai-newsletters-summary-production.up.railway.app/api/status)
+          echo "📊 Final status: $status"
