@@ -1,6 +1,8 @@
 """Claude AI Service - Analyserar och sammanfattar veckan"""
 
 import os
+import random
+from datetime import datetime, timedelta
 from anthropic import Anthropic
 
 class ClaudeService:
@@ -8,11 +10,82 @@ class ClaudeService:
         self.client = Anthropic(api_key=os.getenv('CLAUDE_API_KEY'))
         self.model = "claude-sonnet-4-20250514"
     
+    def _calculate_video_weight(self, published_date):
+        """Beräkna sannolikhet baserat på ålder"""
+        if not published_date:
+            return 0.3  # Default medel-sannolikhet om datum saknas
+        
+        try:
+            if isinstance(published_date, str):
+                pub_date = datetime.strptime(published_date, '%Y-%m-%d').date()
+            else:
+                pub_date = published_date
+            
+            today = datetime.now().date()
+            days_old = (today - pub_date).days
+            
+            # Viktning baserat på ålder
+            if days_old < 30:  # <1 månad
+                return 0.8
+            elif days_old < 90:  # 1-3 månader
+                return 0.5
+            elif days_old < 180:  # 3-6 månader
+                return 0.3
+            else:  # >6 månader
+                return 0.1
+        except:
+            return 0.3
+    
+    def _weighted_video_selection(self, videos, count=3):
+        """Välj videos med viktad slumpmässighet"""
+        if not videos:
+            return []
+        
+        # Beräkna vikter för alla videos
+        weighted_videos = []
+        for video in videos:
+            weight = self._calculate_video_weight(video.get('published_date'))
+            weighted_videos.append((video, weight))
+        
+        # Slumpmässigt urval baserat på vikter
+        selected = []
+        remaining = weighted_videos.copy()
+        
+        for _ in range(min(count, len(videos))):
+            if not remaining:
+                break
+            
+            # Weighted random choice
+            total_weight = sum(w for _, w in remaining)
+            if total_weight == 0:
+                # Fallback om alla har vikt 0
+                video, _ = random.choice(remaining)
+            else:
+                rand = random.uniform(0, total_weight)
+                cumsum = 0
+                video = None
+                for v, w in remaining:
+                    cumsum += w
+                    if rand <= cumsum:
+                        video = v
+                        break
+                
+                if video is None:
+                    video = remaining[0][0]
+            
+            selected.append(video)
+            remaining = [(v, w) for v, w in remaining if v != video]
+        
+        return selected
+    
     def analyze_week(self, newsletters, youtube_videos):
         """Analysera veckan och generera Markdown-sammanfattning"""
         
+        # Gör viktad urval av YouTube-videos
+        selected_videos = self._weighted_video_selection(youtube_videos, count=10)
+        
         # Bygg prompt med all data
-        prompt = self._build_analysis_prompt(newsletters, youtube_videos)
+        prompt = self._build_analysis_prompt(newsletters, selected_videos)
         
         # Anropa Claude
         response = self.client.messages.create(
@@ -87,7 +160,9 @@ Skapa ett Teams-inlägg med denna struktur:
 ## 🎥 Top 3 YouTube-klipp
 [Välj 3 videos från listan som passar bäst till veckans tema. För varje:]
 **[Titel]** - [1-2 meningar varför den är intressant]
-🔗 [URL]
+🔗 [Klicka här för video](URL)
+
+VIKTIGT: Använd Markdown-format för länkar: [Länktext](URL), inte bara URL:en.
 
 ## 😄 Lättsamt & Underhållande
 [Välj 1-2 newsletters eller videos som är mer underhållande/lättare]

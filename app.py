@@ -74,6 +74,7 @@ def add_youtube():
             'category': data.get('category', ''),
             'type': data.get('type', ''),
             'description': data.get('description', ''),
+            'published_date': data.get('published_date', None),
             'is_active': True
         }).execute()
         return jsonify({'success': True, 'data': result.data})

@@ -27,6 +27,14 @@
             </div>
         </div>
         <div>
+            <label class="block text-sm font-medium mb-1">Publiceringsdatum</label>
+            <input type="text" id="published_date" name="published_date" 
+                   placeholder="ÅÅÅÅMMDD"
+                   maxlength="10"
+                   class="w-full border rounded px-3 py-2">
+            <p class="text-xs text-gray-500 mt-1">Skriv 8 siffror (t.ex. 20251220)</p>
+        </div>
+        <div>
             <label class="block text-sm font-medium mb-1">Beskrivning</label>
             <textarea name="description" rows="3" 
                       class="w-full border rounded px-3 py-2"></textarea>
@@ -51,6 +59,11 @@
                             {{ video.url }}
                         </a>
                     </p>
+                    {% if video.published_date %}
+                    <p class="text-sm text-gray-500 mt-1">
+                        📅 {{ video.published_date[:10] if video.published_date|length > 10 else video.published_date }}
+                    </p>
+                    {% endif %}
                     {% if video.category or video.type %}
                     <p class="text-sm text-gray-500 mt-1">
                         {% if video.category %}<span class="bg-blue-100 px-2 py-1 rounded">{{ video.category }}</span>{% endif %}
@@ -80,6 +93,18 @@
 
 {% block scripts %}
 <script>
+// Auto-formatera datum medan användaren skriver
+document.getElementById('published_date').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, ''); // Ta bort icke-siffror
+    if (value.length >= 4) {
+        value = value.slice(0, 4) + '-' + value.slice(4);
+    }
+    if (value.length >= 7) {
+        value = value.slice(0, 7) + '-' + value.slice(7);
+    }
+    e.target.value = value.slice(0, 10);
+});
+
 document.getElementById('addForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
