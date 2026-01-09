@@ -218,6 +218,17 @@ VIKTIGT: Använd Markdown-format för länkar: [Länktext](URL), inte bara URL:e
 ## 🏆 AI-utmaning för veckan (valfritt)
 [En liten utmaning/uppgift för nyfikna kollegor att testa]
 
+## 📚 Alla newsletters denna vecka
+Lista ALLA newsletters från listan ovan (inte bara Top 3). För varje:
+• **[Titel från ämnesraden]** - 🔗 [Läs här](Drive-länk)
+
+Format exempel:
+• **OpenAI lanserar ny modell** - 🔗 [Läs här](https://drive.google.com/...)
+• **Google AI-uppdateringar** - 🔗 [Läs här](https://drive.google.com/...)
+etc.
+
+VIKTIGT: Inkludera ALLA {len(newsletters)} newsletters från listan, inte bara de som nämnts tidigare.
+
 ---
 
 **Viktiga riktlinjer:**
