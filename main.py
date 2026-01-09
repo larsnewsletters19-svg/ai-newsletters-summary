@@ -80,7 +80,7 @@ def main():
         
         # 5. AI-analys med Claude
         logger.info("Analyserar med Claude...")
-        analysis = claude.analyze_week(saved_newsletters, youtube_videos)
+        analysis = claude.analyze_week(saved_newsletters, youtube_videos, week_number)
         
         # 6. Spara till Supabase
         logger.info("Sparar till Supabase...")
@@ -91,12 +91,20 @@ def main():
             youtube_picks=analysis['youtube_picks']
         )
         
-        # 7. Skicka email med färdigt Markdown
-        logger.info("Skickar email...")
+        # 7. Skicka TVÅ mail
+        logger.info("Skickar mail med fullständig sammanfattning...")
         email_service.send_summary(
             to_email=os.getenv('EMAIL_TO'),
-            subject=f"AI-sammanfattning vecka {week_number}",
+            subject=f"AI-sammanfattning vecka {week_number} - Fullständig",
             markdown=analysis['markdown'],
+            week=folder_name
+        )
+        
+        logger.info("Skickar kort Teams-inlägg...")
+        email_service.send_teams_post(
+            to_email=os.getenv('EMAIL_TO'),
+            subject=f"AI-sammanfattning vecka {week_number} - Teams-inlägg",
+            short_description=analysis['short_description'],
             week=folder_name
         )
         

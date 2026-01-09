@@ -78,14 +78,14 @@ class ClaudeService:
         
         return selected
     
-    def analyze_week(self, newsletters, youtube_videos):
-        """Analysera veckan och generera Markdown-sammanfattning"""
+    def analyze_week(self, newsletters, youtube_videos, week_number):
+        """Analysera veckan och generera Markdown-sammanfattning + kort beskrivning"""
         
         # Gör viktad urval av YouTube-videos
         selected_videos = self._weighted_video_selection(youtube_videos, count=10)
         
         # Bygg prompt med all data
-        prompt = self._build_analysis_prompt(newsletters, selected_videos)
+        prompt = self._build_analysis_prompt(newsletters, selected_videos, week_number)
         
         # Anropa Claude
         response = self.client.messages.create(
@@ -102,15 +102,56 @@ class ClaudeService:
         
         markdown_content = response.content[0].text
         
+        # Generera kort beskrivning för Teams-inlägg
+        short_description = self._generate_short_description(newsletters, selected_videos, week_number)
+        
         # Extrahera YouTube-picks från resultatet (för databas)
         youtube_picks = self._extract_youtube_picks(markdown_content)
         
         return {
             'markdown': markdown_content,
+            'short_description': short_description,
             'youtube_picks': youtube_picks
         }
     
-    def _build_analysis_prompt(self, newsletters, youtube_videos):
+    def _generate_short_description(self, newsletters, videos, week_number):
+        """Generera kort beskrivning för Teams-inlägg"""
+        
+        # Ta top ämnen från newsletters
+        topics_prompt = f"""Baserat på dessa newsletters, skapa en kort punktlista med 4-5 nyckelhändelser denna vecka.
+
+NEWSLETTERS (ämnesrader):
+{chr(10).join([f"- {nl['subject']}" for nl in newsletters[:15]])}
+
+Skapa ENDAST en bullet-lista med 4-5 korta punkter (max 8 ord per punkt). Format:
+• Punkt 1
+• Punkt 2
+• Punkt 3
+etc.
+
+VIKTIGT: Bara bullets, ingen annan text."""
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=200,
+            temperature=0.5,
+            messages=[{"role": "user", "content": topics_prompt}]
+        )
+        
+        bullets = response.content[0].text.strip()
+        
+        # Bygg kort meddelande
+        short_msg = f"""🤖 AI-veckans sammanfattning är uppdaterad (Vecka {week_number})
+
+Den här veckan:
+{bullets}
+
+⏱️ Lästid: ~5–6 min  
+👉 Full sammanfattning finns i fliken ovan"""
+        
+        return short_msg
+    
+    def _build_analysis_prompt(self, newsletters, youtube_videos, week_number):
         """Bygg prompt för Claude"""
         
         # Skapa sammanfattning av newsletters (begränsa längd)
@@ -147,7 +188,7 @@ Din uppgift är att analysera dessa newsletters och YouTube-videos och skapa en 
 Skapa ett Teams-inlägg med denna struktur:
 
 ---
-# 🤖 AI-veckans sammanfattning
+# 🤖 AI-veckans sammanfattning - Vecka {week_number}
 
 ## ⚡ Veckans highlights
 [De 3 mest intressanta sakerna som hänt denna vecka - kort och kärnfullt]

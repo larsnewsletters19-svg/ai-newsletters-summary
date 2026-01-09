@@ -100,3 +100,73 @@ Markdown kommer automatiskt att formateras snyggt!
         except Exception as e:
             print(f"Fel vid emailsändning: {e}")
             raise
+    
+    def send_teams_post(self, to_email, subject, short_description, week):
+        """Skicka kort Teams-inlägg via Gmail API"""
+        
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = self.from_email
+        msg['To'] = to_email
+        
+        # Text version
+        text_body = f"""
+Teams-inlägg för vecka {week}
+
+Kopiera texten nedan och klistra in som ett nytt inlägg i din Teams-kanal:
+
+{'='*60}
+
+{short_description}
+
+{'='*60}
+
+Detta korta inlägg berättar för teamet att det finns en ny sammanfattning.
+Den fullständiga sammanfattningen ska kopieras till Teams-fliken.
+"""
+        
+        # HTML version
+        html_body = f"""
+<html>
+<body style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+    <h2>📢 Teams-inlägg för vecka {week}</h2>
+    <p>Kopiera texten nedan och klistra in som ett nytt inlägg i din Teams-kanal:</p>
+    
+    <div style="background-color: #f0f8ff; border: 2px solid #0078d4; border-radius: 8px; padding: 20px; margin: 20px 0;">
+        <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">{short_description}</pre>
+    </div>
+    
+    <p><strong>Så här gör du:</strong></p>
+    <ol>
+        <li>Kopiera texten i den blå rutan ovan</li>
+        <li>Öppna Teams och gå till din AI-kanal</li>
+        <li>Klistra in som ett nytt inlägg</li>
+        <li>Klart! Teamet ser att det finns en ny sammanfattning</li>
+    </ol>
+    
+    <p><em>Den fullständiga sammanfattningen ska kopieras till Teams-fliken (från det andra mailet).</em></p>
+</body>
+</html>
+"""
+        
+        part1 = MIMEText(text_body, 'plain')
+        part2 = MIMEText(html_body, 'html')
+        
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        try:
+            # Skapa raw message
+            raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode('utf-8')
+            
+            # Skicka via Gmail API
+            self.service.users().messages().send(
+                userId='me',
+                body={'raw': raw_message}
+            ).execute()
+            
+            print(f"✓ Teams-inlägg skickat till {to_email} via Gmail API")
+            
+        except Exception as e:
+            print(f"Fel vid emailsändning: {e}")
+            raise
