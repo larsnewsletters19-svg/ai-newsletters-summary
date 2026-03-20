@@ -1,0 +1,37 @@
+name: Test Supabase Connection
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Test 1 - Basic DNS
+        run: |
+          echo "Testing DNS..."
+          nslookup uwvehsingptdtvpraewx.supabase.co
+      
+      - name: Test 2 - Simple curl
+        run: |
+          echo "Testing simple curl..."
+          curl -I https://uwvehsingptdtvpraewx.supabase.co
+      
+      - name: Test 3 - With hardcoded auth
+        run: |
+          echo "Testing with API..."
+          curl "https://uwvehsingptdtvpraewx.supabase.co/rest/v1/youtube_videos?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}"
+      
+      - name: Test 4 - Check secret is set
+        run: |
+          if [ -z "${{ secrets.SUPABASE_KEY }}" ]; then
+            echo "❌ SUPABASE_KEY is empty!"
+            exit 1
+          else
+            echo "✅ SUPABASE_KEY is set (length: ${#SUPABASE_KEY})"
+          fi
+        env:
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
