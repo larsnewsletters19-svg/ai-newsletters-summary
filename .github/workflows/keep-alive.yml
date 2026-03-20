@@ -12,38 +12,24 @@ jobs:
     steps:
       - name: Ping Railway Backend
         run: |
-          echo "🏓 Pinging Railway backend..."
-          
+          echo "🏓 Pinging Railway..."
           response=$(curl -s -w "\n%{http_code}" https://ai-newsletters-summary-production.up.railway.app/health)
           http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n-1)
-          
-          echo "📡 Railway Response: $http_code"
-          echo "📊 Body: $body"
-          
-          if [ "$http_code" = "200" ]; then
-            echo "✅ Railway backend is alive!"
-          else
-            echo "❌ Failed to ping Railway"
-            exit 1
-          fi
+          echo "📡 Railway: $http_code"
+          if [ "$http_code" != "200" ]; then exit 1; fi
+          echo "✅ Railway alive!"
       
-      - name: Test Basic Connectivity
-        run: |
-          echo "Testing DNS resolution..."
-          nslookup uwvehsingptdtvpraewx.supabase.co || echo "DNS failed"
-          
-          echo "Testing basic curl..."
-          curl -v https://uwvehsingptdtvpraewx.supabase.co || echo "Curl failed"
-      
-      - name: Test with Secret
+      - name: Ping Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          echo "URL length: ${#SUPABASE_URL}"
-          echo "First 8 chars: ${SUPABASE_URL:0:8}"
-          
-          curl -v "${SUPABASE_URL}/rest/v1/youtube_videos?select=id&limit=1" \
+          echo "🏓 Pinging Supabase..."
+          response=$(curl -s -w "\n%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/youtube_videos?select=id&limit=1" \
             -H "apikey: ${SUPABASE_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_KEY}"
+            -H "Authorization: Bearer ${SUPABASE_KEY}")
+          http_code=$(echo "$response" | tail -n1)
+          echo "📡 Supabase: $http_code"
+          if [ "$http_code" != "200" ]; then exit 1; fi
+          echo "✅ Supabase alive!"
