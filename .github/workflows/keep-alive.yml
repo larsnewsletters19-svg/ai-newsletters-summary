@@ -1,13 +1,11 @@
 name: Keep Railway & Supabase Alive
-
 on:
   schedule:
-    # Kör varje dag kl 08:00 UTC (09:00 svensk tid)
-    - cron: '0 8 * * *'
-  workflow_dispatch: # Tillåt manuell trigger för testning
+    - cron: '0 8 * * *'  # Varje dag 09:00 svensk tid
+  workflow_dispatch:
 
 jobs:
-  ping-railway:
+  keep-alive:
     runs-on: ubuntu-latest
     
     steps:
@@ -15,28 +13,43 @@ jobs:
         run: |
           echo "🏓 Pinging Railway backend..."
           
-          # Ping Railway /health endpoint
           response=$(curl -s -w "\n%{http_code}" https://ai-newsletters-summary-production.up.railway.app/health)
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n-1)
           
-          echo "📡 Response code: $http_code"
-          echo "📊 Response body: $body"
+          echo "📡 Railway Response: $http_code"
+          echo "📊 Body: $body"
           
           if [ "$http_code" = "200" ]; then
             echo "✅ Railway backend is alive!"
-            echo "✅ Supabase pinged successfully!"
           else
-            echo "❌ Failed to ping Railway backend"
+            echo "❌ Failed to ping Railway"
             exit 1
           fi
       
-      - name: Check if Supabase was pinged
+      - name: Ping Supabase Directly
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          # Verifiera att Supabase ping lyckades
-          if echo "$body" | grep -q '"supabase_ping":"ok"'; then
-            echo "✅ Supabase is active!"
+          echo "🏓 Pinging Supabase directly..."
+          
+          response=$(curl -s -w "\n%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/youtube_videos?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_KEY}")
+          
+          http_code=$(echo "$response" | tail -n1)
+          
+          echo "📡 Supabase Response: $http_code"
+          
+          if [ "$http_code" = "200" ]; then
+            echo "✅ Supabase is alive!"
           else
-            echo "⚠️  Warning: Supabase ping might have failed"
-            echo "Response was: $body"
+            echo "❌ Failed to ping Supabase"
+            exit 1
           fi
+      
+      - name: Summary
+        run: |
+          echo "🎉 Both Railway and Supabase are active!"
