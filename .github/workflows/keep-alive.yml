@@ -5,7 +5,7 @@
           
           echo "Testing ping..."
           ping -c 2 uwvehsingptdtvpraewx.supabase.co || echo "Ping failed"
-          
+
           echo "Testing basic curl..."
           curl -v https://uwvehsingptdtvpraewx.supabase.co || echo "Curl failed"
       
