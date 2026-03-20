@@ -1,10 +1,37 @@
-- name: Test Basic Connectivity
+name: Keep Railway & Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Railway Backend
+        run: |
+          echo "🏓 Pinging Railway backend..."
+          
+          response=$(curl -s -w "\n%{http_code}" https://ai-newsletters-summary-production.up.railway.app/health)
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          echo "📡 Railway Response: $http_code"
+          echo "📊 Body: $body"
+          
+          if [ "$http_code" = "200" ]; then
+            echo "✅ Railway backend is alive!"
+          else
+            echo "❌ Failed to ping Railway"
+            exit 1
+          fi
+      
+      - name: Test Basic Connectivity
         run: |
           echo "Testing DNS resolution..."
           nslookup uwvehsingptdtvpraewx.supabase.co || echo "DNS failed"
-          
-          echo "Testing ping..."
-          ping -c 2 uwvehsingptdtvpraewx.supabase.co || echo "Ping failed"
           
           echo "Testing basic curl..."
           curl -v https://uwvehsingptdtvpraewx.supabase.co || echo "Curl failed"
