@@ -1,23 +1,22 @@
-- name: Ping Supabase Directly
+- name: Test Basic Connectivity
+        run: |
+          echo "Testing DNS resolution..."
+          nslookup uwvehsingptdtvpraewx.supabase.co || echo "DNS failed"
+          
+          echo "Testing ping..."
+          ping -c 2 uwvehsingptdtvpraewx.supabase.co || echo "Ping failed"
+          
+          echo "Testing basic curl..."
+          curl -v https://uwvehsingptdtvpraewx.supabase.co || echo "Curl failed"
+      
+      - name: Test with Secret
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          echo "🏓 Pinging Supabase directly..."
-          
-          # Debug - visa längd på secrets (inte innehållet)
           echo "URL length: ${#SUPABASE_URL}"
-          echo "Key length: ${#SUPABASE_KEY}"
+          echo "First 8 chars: ${SUPABASE_URL:0:8}"
           
-          # Testa anslutningen
-          response=$(curl -v -s -w "\n%{http_code}" \
-            "${SUPABASE_URL}/rest/v1/youtube_videos?select=id&limit=1" \
+          curl -v "${SUPABASE_URL}/rest/v1/youtube_videos?select=id&limit=1" \
             -H "apikey: ${SUPABASE_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_KEY}" 2>&1)
-          
-          http_code=$(echo "$response" | tail -n1)
-          
-          echo "📡 Full response:"
-          echo "$response"
-          echo ""
-          echo "📡 HTTP code: $http_code"
+            -H "Authorization: Bearer ${SUPABASE_KEY}"
