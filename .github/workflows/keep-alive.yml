@@ -1,6 +1,8 @@
 name: Keep Railway & Supabase Alive
 
 on:
+  schedule:
+    - cron: '0 8 * * *'
   workflow_dispatch:
 
 jobs:
@@ -8,29 +10,26 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Debug Secrets
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      - name: Ping Railway Backend
         run: |
-          echo "=== DEBUG SECRETS ==="
-          echo "URL length: ${#SUPABASE_URL}"
-          echo "URL first 30 chars: ${SUPABASE_URL:0:30}"
-          echo "URL last 20 chars: ${SUPABASE_URL: -20}"
-          echo ""
-          echo "KEY length: ${#SUPABASE_KEY}"
-          echo "KEY first 20 chars: ${SUPABASE_KEY:0:20}"
-          echo "KEY last 10 chars: ${SUPABASE_KEY: -10}"
-          echo ""
-          echo "Expected URL: https://zcdjwtyxehfrkyhnpekq.supabase.co"
-          echo "Expected length: 47"
+          echo "🏓 Pinging Railway..."
+          response=$(curl -s -w "\n%{http_code}" https://ai-newsletters-summary-production.up.railway.app/health)
+          http_code=$(echo "$response" | tail -n1)
+          echo "📡 Railway: $http_code"
+          if [ "$http_code" != "200" ]; then exit 1; fi
+          echo "✅ Railway alive!"
       
-      - name: Try Actual Request
+      - name: Ping Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          echo "Testing actual request..."
-          curl -v "${SUPABASE_URL}/rest/v1/youtube_videos?select=id&limit=1" \
+          echo "🏓 Pinging Supabase..."
+          response=$(curl -s -w "\n%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/youtube_videos?select=id&limit=1" \
             -H "apikey: ${SUPABASE_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_KEY}"
+            -H "Authorization: Bearer ${SUPABASE_KEY}")
+          http_code=$(echo "$response" | tail -n1)
+          echo "📡 Supabase: $http_code"
+          if [ "$http_code" != "200" ]; then exit 1; fi
+          echo "✅ Supabase alive!"
