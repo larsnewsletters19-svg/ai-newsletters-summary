@@ -11,17 +11,17 @@ jobs:
       - name: Test 1 - Basic DNS
         run: |
           echo "Testing DNS..."
-          nslookup uwvehsingptdtvpraewx.supabase.co
+          nslookup zcdjwtyxehfrkyhnpekq.supabase.co
       
       - name: Test 2 - Simple curl
         run: |
           echo "Testing simple curl..."
-          curl -I https://uwvehsingptdtvpraewx.supabase.co
+          curl -I https://zcdjwtyxehfrkyhnpekq.supabase.co
       
       - name: Test 3 - With hardcoded auth
         run: |
           echo "Testing with API..."
-          curl "https://uwvehsingptdtvpraewx.supabase.co/rest/v1/youtube_videos?select=id&limit=1" \
+          curl "https://zcdjwtyxehfrkyhnpekq.supabase.co/rest/v1/youtube_videos?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}"
       
